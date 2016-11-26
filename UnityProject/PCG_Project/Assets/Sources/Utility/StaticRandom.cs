@@ -6,6 +6,11 @@ public static class StaticRandom
 
     public static int Rand(int f, int t)
     {
-        return (f+random.Next(0,10000000))%t;
+        return random.Next(f, t);
+    }
+
+    public static double Sample()
+    {
+        return random.NextDouble();
     }
 }
