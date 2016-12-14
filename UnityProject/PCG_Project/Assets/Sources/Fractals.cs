@@ -61,6 +61,8 @@ public class Fractals : MonoBehaviour
                 else
                     s_y = y - s;
                 terrain.terrainData.SetHeights(0, 0, alg.FlattenTerrain(s_y, s_x, terraforming_size, terraforming_variation));
+                CastleGenerator cg = new CastleGenerator(new Vector2(terraforming_size, terraforming_size), new Vector2(hit.point.x, hit.point.z), 50);
+                StartCoroutine(cg.runEvolution());
             }
         }
     }
