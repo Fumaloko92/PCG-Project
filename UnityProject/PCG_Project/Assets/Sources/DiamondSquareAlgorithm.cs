@@ -2,17 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace TerrainCreation
 {
     class DiamondSquareAlgorithm
     {
         private float[,] heightmap;
+        private float[,] startingHeightmap;
         private int h_size;
         private int step;
         private int iterations;
         private float seed;
         private float variation;
+        private float terrain_variation;
         private float roughness;
 
         private int x_start_flat;
@@ -20,40 +23,55 @@ namespace TerrainCreation
         private int size_flat;
         private float terraform_var;
 
-
-        /// <summary>
-        /// Calculates the heightmap of the terrain using the DiamondSquare algorithm
-        /// </summary>
-        /// <param name="size">The size of the terrain</param>
-        /// <param name="seed">The starting value of the 4 corners of the heightmap</param>
-        /// <param name="variation">The variation</param>
-        /// <param name="roughness">The roughness</param>
-        /// <param name="x_start_flat">The x coordinate of the flat square</param>
-        /// <param name="y_start_flat">The y coordinate of the flat square</param>
-        /// <param name="size_flat">The size of the flat square</param>
-        /// <param name="terraform_var">The variation of the terraformed square</param>
-        /// <returns>The heightmap</returns>
-        public float[,] DiamondSquareLoop(int size, float seed, float variation, float roughness, int x_start_flat, int y_start_flat, int size_flat, float terraform_var)
+        public float[,] FlattenTerrain(int x, int y, int size, float variation)
         {
-            this.x_start_flat = x_start_flat;
-            this.y_start_flat = y_start_flat;
-            this.size_flat = size_flat;
-            this.terraform_var = terraform_var;
+            x_start_flat = x;
+            y_start_flat = y;
+            size_flat = size;
+            terraform_var = variation;
+            this.variation = terrain_variation;
+            h_size = startingHeightmap.GetLength(0);
+            heightmap = new float[h_size, h_size];
+            heightmap[0, h_size - 1] = startingHeightmap[0, h_size - 1];
+            heightmap[h_size - 1, 0] = startingHeightmap[h_size - 1, 0];
+            heightmap[0, 0] = startingHeightmap[0, 0];
+            heightmap[h_size - 1, h_size - 1] = startingHeightmap[h_size - 1, h_size - 1];
+            iterations = (int)Math.Log(h_size - 1, 2);
+            step = h_size - 1;
+            for (int i = 0; i < iterations; i++, step /= 2)
+            {
+                DiamondStep(true);
+                SquareStep(true);
+                UpdateVariation();
+            }
+            return heightmap;
+        }
+
+        public float[,] GenerateTerrain(int size, float seed, float variation, float roughness)
+        {
             heightmap = new float[size, size];
+            x_start_flat = 0;
+            y_start_flat = 0;
+            size_flat = 0;
             h_size = size;
             this.seed = seed;
             this.variation = variation;
+            terrain_variation = variation;
             this.roughness = roughness;
             iterations = (int)Math.Log(h_size - 1, 2);
             step = h_size - 1;
             InitializeDiamondSquare();
             for (int i = 0; i < iterations; i++, step /= 2)
             {
-                DiamondStep();
+                DiamondStep(false);
 
-                SquareStep();
+                SquareStep(false);
                 UpdateVariation();
             }
+            startingHeightmap = new float[size, size];
+            for (int i = 0; i < heightmap.GetLength(0); i++)
+                for (int k = 0; k < heightmap.GetLength(1); k++)
+                    startingHeightmap[i, k] = heightmap[i, k];
             return heightmap;
         }
 
@@ -82,12 +100,40 @@ namespace TerrainCreation
             heightmap[h_size - 1, h_size - 1] = seed;
         }
 
-        private void DiamondStep()
+        private void DiamondStep(bool IsFlattening)
         {
             int step = this.step / 2;
-            for (int i = step; i < h_size - 1; i += this.step)
-                for (int k = step; k < h_size - 1; k += this.step)
-                    heightmap[i, k] = SquareSum(i - step, k - step, this.step) + RandomAmount(i - step, k - step);
+            if (IsFlattening)
+            {
+                for (int i = step; i < h_size - 1; i += this.step)
+                    for (int k = step; k < h_size - 1; k += this.step)
+                        if (PointInFlatteningTerain(i - step, k - step))
+                            heightmap[i, k] = SquareSum(i - step, k - step, this.step) + RandomFlatteningAmount();
+                        else
+                        {
+                            /*if (SquareInFlattenedTerrain(i - step, k - step, this.step))
+                                heightmap[i, k] = SquareSum(i - step, k - step, this.step) + RandomAmount();
+                            else*/
+                                heightmap[i, k] = startingHeightmap[i, k];
+                        }
+            }
+            else
+            {
+                for (int i = step; i < h_size - 1; i += this.step)
+                    for (int k = step; k < h_size - 1; k += this.step)
+                        heightmap[i, k] = SquareSum(i - step, k - step, this.step) + RandomAmount();
+            }
+
+        }
+
+        private bool PointInFlatteningTerain(int i, int k)
+        {
+            return i >= x_start_flat && i < (x_start_flat + size_flat) && k >= y_start_flat && k < (y_start_flat + size_flat);
+        }
+
+        private bool SquareInFlattenedTerrain(int i, int k, int step)
+        {
+            return PointInFlatteningTerain(i, k) || PointInFlatteningTerain(i + step, k) || PointInFlatteningTerain(i, k + step) || PointInFlatteningTerain(i + step, k + step);
         }
 
         private float SquareSum(int i, int k, int step)
@@ -95,40 +141,98 @@ namespace TerrainCreation
             return (heightmap[i, k] + heightmap[i + step, k] + heightmap[i, k + step] + heightmap[i + step, k + step]) / 4;
         }
 
-        private void SquareStep()
+        private void SquareStep(bool IsFlattening)
         {
             int step = this.step / 2;
-            for (int i = step; i < h_size - 1; i += this.step)
-                for (int k = step; k < h_size - 1; k += this.step)
-                {
-                    if (InsideMap(i, k + step))
+            if (IsFlattening)
+            {
+                for (int i = step; i < h_size - 1; i += this.step)
+                    for (int k = step; k < h_size - 1; k += this.step)
                     {
-                        heightmap[i, k + step] = DiamondSum(i, k + step, step) + RandomAmount(i, k + step);
+                        if (InsideMap(i, k + step))
+                        {
+                            if (PointInFlatteningTerain(i, k + step))
+                                heightmap[i, k + step] = DiamondSum(i, k + step, step) + RandomFlatteningAmount();
+                            else
+                            {
+                                /*if (DiamondIsInFlattenedTerrain(i, k + step, step))
+                                    heightmap[i, k + step] = DiamondSum(i, k + step, step) + RandomAmount();
+                                else*/
+                                    heightmap[i, k + step] = startingHeightmap[i, k + step];
+                            }
+                        }
+                        if (InsideMap(i, k - step))
+                        {
+                            if (PointInFlatteningTerain(i, k - step))
+                                heightmap[i, k - step] = DiamondSum(i, k - step, step) + RandomFlatteningAmount();
+                            else
+                            {
+                                /*if (DiamondIsInFlattenedTerrain(i, k - step, step))
+                                    heightmap[i, k - step] = DiamondSum(i, k - step, step) + RandomAmount();
+                                else*/
+                                    heightmap[i, k - step] = startingHeightmap[i, k - step];
+                            }
+                        }
+                        if (InsideMap(i + step, k))
+                        {
+                            if (PointInFlatteningTerain(i + step, k))
+                                heightmap[i + step, k] = DiamondSum(i + step, k, step) + RandomFlatteningAmount();
+                            else
+                            {
+                               /* if (DiamondIsInFlattenedTerrain(i + step, k, step))
+                                    heightmap[i + step, k] = DiamondSum(i + step, k, step) + RandomAmount();
+                                else*/
+                                    heightmap[i + step, k] = startingHeightmap[i + step, k];
+                            }
+                        }
+                        if (InsideMap(i - step, k))
+                        {
+                            if (PointInFlatteningTerain(i - step, k))
+                                heightmap[i - step, k] = DiamondSum(i - step, k, step) + RandomFlatteningAmount();
+                            else
+                            {
+                               /* if (DiamondIsInFlattenedTerrain(i - step, k, step))
+                                    heightmap[i - step, k] = DiamondSum(i - step, k, step) + RandomAmount();
+                                else*/
+                                    heightmap[i - step, k] = startingHeightmap[i - step, k];
+                            }
+                        }
                     }
-                    if (InsideMap(i, k - step))
-                    {
-                        heightmap[i, k - step] = DiamondSum(i, k - step, step) + RandomAmount(i, k - step);
-                    }
-                    if (InsideMap(i + step, k))
-                    {
-                        heightmap[i + step, k] = DiamondSum(i + step, k, step) + RandomAmount(i + step, k);
-                    }
-                    if (InsideMap(i - step, k))
-                    {
-                        heightmap[i - step, k] = DiamondSum(i - step, k, step) + RandomAmount(i - step, k);
-                    }
-                }
-        }
-
-        private float RandomAmount(int i, int k)
-        {
-            if (i >= x_start_flat && i < (x_start_flat + size_flat) && k >= y_start_flat && k < (y_start_flat + size_flat))
-                return (float)StaticRandom.Sample() * terraform_var * 2 - terraform_var;
+            }
             else
-
-                return (float)StaticRandom.Sample() * variation * 2 - variation;
+            {
+                for (int i = step; i < h_size - 1; i += this.step)
+                    for (int k = step; k < h_size - 1; k += this.step)
+                    {
+                        if (InsideMap(i, k + step))
+                        {
+                            heightmap[i, k + step] = DiamondSum(i, k + step, step) + RandomAmount();
+                        }
+                        if (InsideMap(i, k - step))
+                        {
+                            heightmap[i, k - step] = DiamondSum(i, k - step, step) + RandomAmount();
+                        }
+                        if (InsideMap(i + step, k))
+                        {
+                            heightmap[i + step, k] = DiamondSum(i + step, k, step) + RandomAmount();
+                        }
+                        if (InsideMap(i - step, k))
+                        {
+                            heightmap[i - step, k] = DiamondSum(i - step, k, step) + RandomAmount();
+                        }
+                    }
+            }
         }
 
+        private float RandomAmount()
+        {
+            return (float)StaticRandom.Sample() * variation * 2 - variation;
+        }
+
+        private float RandomFlatteningAmount()
+        {
+            return (float)StaticRandom.Sample() * terraform_var * 2 - terraform_var;
+        }
         private float DiamondSum(int i, int k, int step)
         {
             float sum = 0; int counter = 0;
@@ -153,6 +257,11 @@ namespace TerrainCreation
                 counter++;
             }
             return sum / counter;
+        }
+
+        private bool DiamondIsInFlattenedTerrain(int i, int k, int step)
+        {
+            return PointInFlatteningTerain(i, k + step) || PointInFlatteningTerain(i, k - step) || PointInFlatteningTerain(i + step, k) || PointInFlatteningTerain(i - step, k);
         }
 
         private bool InsideMap(int i, int k)

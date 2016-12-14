@@ -11,6 +11,7 @@ public class Fractals : MonoBehaviour
     public float seed;
     public float variation;
     public float roughness;
+    
 
     private int terraforming_size = 129;
     private float terraforming_variation = 0.0002f;
@@ -23,12 +24,13 @@ public class Fractals : MonoBehaviour
         alg = new DiamondSquareAlgorithm();
         terrain = GetComponent<Terrain>();
         h_size = terrain.terrainData.heightmapResolution;
+        terrain.terrainData.SetHeights(0, 0, alg.GenerateTerrain(h_size, seed, variation, roughness));
     }
 
     void OnGUI()
     {
         if (GUI.Button(new Rect(10, 70, 150, 30), "Generate terrain"))
-            terrain.terrainData.SetHeights(0, 0, alg.DiamondSquareLoop(h_size, seed, variation, roughness, 0, 0, 0, 0));
+            terrain.terrainData.SetHeights(0, 0, alg.GenerateTerrain(h_size, seed, variation, roughness));
 
 
     }
@@ -58,9 +60,7 @@ public class Fractals : MonoBehaviour
                     s_y = 0;
                 else
                     s_y = y - s;
-
-                terrain.terrainData.SetHeights(0,0, alg.DiamondSquareLoop(h_size, seed, variation, roughness, s_y, s_x, terraforming_size, terraforming_variation));
-
+                terrain.terrainData.SetHeights(0, 0, alg.FlattenTerrain(s_y, s_x, terraforming_size, terraforming_variation));
                 CastleGenerator cg = new CastleGenerator(new Vector2(terraforming_size, terraforming_size), new Vector2(hit.point.x, hit.point.z), 50);
                 StartCoroutine(cg.runEvolution());
             }
