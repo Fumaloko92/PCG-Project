@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace TerrainCreation
 {
-    class DiamondSquareAlgorithm
+    public class DiamondSquareAlgorithm
     {
         private float[,] heightmap;
         private float[,] startingHeightmap;

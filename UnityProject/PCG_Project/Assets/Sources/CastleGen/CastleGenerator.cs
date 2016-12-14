@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class CastleGenerator {
 
-    public const float GENERATIONS = 100;
+    public const float GENERATIONS = 200;
     public const float POPULATION_SIZE = 100;
 
     public const float MUTATE_PROBABILITY = 0.3F;
@@ -14,16 +14,12 @@ public class CastleGenerator {
     Vector2 maxCastleSize;
     public Vector2 Dimension { get { return this.maxCastleSize; } }
 
-    Vector2 castlePosition;
-    public Vector2 Position { get { return this.castlePosition; } }
-
     int desiredBuildingCount;
     public int DesiredBuildingCount { get { return this.desiredBuildingCount; } }
 
-    public CastleGenerator(Vector2 maxSize, Vector2 pos, int buildingCount)
+    public CastleGenerator(Vector2 maxSize, int buildingCount)
     {
         this.maxCastleSize = maxSize;
-        this.castlePosition = pos;
         this.desiredBuildingCount = buildingCount;
     }
 
@@ -35,7 +31,7 @@ public class CastleGenerator {
         population = new List<Castle>();
         for (int i = 0; i < POPULATION_SIZE; i++)
         {
-            Castle castle = new Castle(this, 10, 20, new int[0], desiredBuildingCount);
+            Castle castle = new Castle(this, 10, 20, new int[0], desiredBuildingCount, Vector2.zero);
             castle.randomizeValues();
             population.Add(castle);
         }
@@ -83,6 +79,32 @@ public class CastleGenerator {
         //generate on map the best castle
         population.Sort();
         Debug.Log("Best Fitness: " + population[0].fitness+ " output: "+population[0].output());
+
+        Terrain terrain = Terrain.activeTerrain;
+
+        Fractals fac = terrain.GetComponent<Fractals>();
+
+        Vector3 pos = new Vector3(population[0].getPos().x,0, population[0].getPos().y);
+        pos -= terrain.transform.position;
+        pos.x /= terrain.terrainData.size.x;
+        pos.z /= terrain.terrainData.size.z;
+        int x = (int)(pos.x * terrain.terrainData.heightmapWidth);
+        int y = (int)(pos.z * terrain.terrainData.heightmapHeight);
+        int s = (fac.terraforming_size - 1) / 2;
+        int s_x, s_y;
+        if (x - s < 0)
+            s_x = 0;
+        else
+            s_x = x - s;
+
+        if (y - s < 0)
+            s_y = 0;
+        else
+            s_y = y - s;
+        terrain.terrainData.SetHeights(0, 0, fac.alg.FlattenTerrain(s_y, s_x, fac.terraforming_size, fac.terraforming_variation));
+
+
+
         population[0].buildCastle();
 
         Debug.Log("end");

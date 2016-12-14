@@ -9,6 +9,7 @@ public class Castle : System.IComparable<Castle> {
 
     CastleGenerator gen;
     Vector2 position;
+    public Vector2 getPos() { return this.position; }
     IntRange nodeSize;
     int[] constructIntervals;
     int buildingCount;
@@ -18,14 +19,14 @@ public class Castle : System.IComparable<Castle> {
     GameObject container;
     List<Vector3> wallCorners = new List<Vector3>();
 
-    public Castle(CastleGenerator generator, int nodeMin, int nodeMax, int[] constructIntervals, int buildingCount)
+    public Castle(CastleGenerator generator, int nodeMin, int nodeMax, int[] constructIntervals, int buildingCount, Vector2 pos)
     {
         this.fitness = 0;
         this.gen = generator;
-        this.position = generator.Position;
         this.nodeSize = new IntRange(nodeMin, nodeMax);
         this.constructIntervals = constructIntervals;
         this.buildingCount = buildingCount;
+        this.position = pos;
     }
 
     //randomizes values - only run for the initial generation
@@ -41,6 +42,8 @@ public class Castle : System.IComparable<Castle> {
         {
             constructIntervals[i] = Random.Range(0, 10);
         }
+
+        this.position = new Vector2(((float)StaticRandom.Sample() * (Terrain.activeTerrain.terrainData.size.x-(gen.Dimension.x/2)))+ (gen.Dimension.x / 2), ((float)StaticRandom.Sample() *(Terrain.activeTerrain.terrainData.size.z-(gen.Dimension.y/2))) + (gen.Dimension.x / 2));
 
         //randomizes building count according to initial desired count +- 5 (atleast have 1 building)
         buildingCount = Random.Range(buildingCount - 5, buildingCount + 5);
@@ -85,8 +88,18 @@ public class Castle : System.IComparable<Castle> {
             }
         }
 
-        offspring[0] = new Castle(this.gen, this.nodeSize.min, this.nodeSize.max,thisConstructInt, this.buildingCount);
-        offspring[1] =  new Castle(this.gen, other.nodeSize.min, other.nodeSize.max,otherConstructInt, other.buildingCount);
+        Vector2 bestPos = Vector2.zero;
+        if(this.fitness > other.fitness)
+        {
+            bestPos = this.position;
+        }
+        else
+        {
+            bestPos = other.position;
+        }
+
+        offspring[0] = new Castle(this.gen, this.nodeSize.min, this.nodeSize.max,thisConstructInt, this.buildingCount,bestPos);
+        offspring[1] =  new Castle(this.gen, other.nodeSize.min, other.nodeSize.max,otherConstructInt, other.buildingCount, bestPos);
 
         return offspring;
     }
@@ -134,6 +147,15 @@ public class Castle : System.IComparable<Castle> {
         {
             buildingCount = Random.Range(buildingCount - 5, buildingCount + 5);
             if (buildingCount < 1) buildingCount = 1;
+        }
+
+        if (Random.value < CastleGenerator.MUTATE_PROBABILITY)
+        {
+            this.position = new Vector2(((float)StaticRandom.Sample() * (Terrain.activeTerrain.terrainData.size.x - (gen.Dimension.x / 2))) + (gen.Dimension.x / 2), this.position.y);
+        }
+        if (Random.value < CastleGenerator.MUTATE_PROBABILITY)
+        {
+            this.position = new Vector2(this.position.x, ((float)StaticRandom.Sample() * (Terrain.activeTerrain.terrainData.size.z - (gen.Dimension.y / 2))) + (gen.Dimension.x / 2));
         }
     }
 
@@ -184,21 +206,26 @@ public class Castle : System.IComparable<Castle> {
         //build towers and walls
         List<Vector3> excludedCorners = new List<Vector3>();
         //corner pillars
-        foreach (Vector3 corner in wallCorners)
+        foreach (Vector3 crnr in wallCorners)
         {
             GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Cube);
             //gob.GetComponent<MeshRenderer>().material.color = Color.yellow;
             gob.name = "pillar";
             gob.transform.localScale = new Vector3(1F, 20, 1F);
-            gob.transform.position = new Vector3(corner.x, corner.y, corner.z);
+
+            Vector3 corner = new Vector3(crnr.x, Terrain.activeTerrain.SampleHeight(crnr), crnr.z);
+
+            gob.transform.position = corner;
             gob.transform.parent = container.transform;
 
             Vector3 XCorner = Vector3.zero;
             Vector3 ZCorner = Vector3.zero;
 
             //build wall
-            foreach (Vector3 otherCorner in wallCorners)
+            foreach (Vector3 otherCrnr in wallCorners)
             {
+                Vector3 otherCorner = new Vector3(otherCrnr.x, Terrain.activeTerrain.SampleHeight(otherCrnr), otherCrnr.z);
+
                 if (!excludedCorners.Contains(otherCorner) && otherCorner != corner)
                 {
                     if (Mathf.Approximately(corner.x, otherCorner.x))
@@ -557,8 +584,20 @@ public class Castle : System.IComparable<Castle> {
 
         float defenceFitness = 1-(avgWallLength / 100);
 
+        float avgHeight = 0;
+        foreach(Node node in nodes)
+        {
+            if(node.building != null)
+            {
+                
+                avgHeight += Terrain.activeTerrain.SampleHeight(new Vector3(node.building.x, 0, node.building.y));
+            }
+        }
+        avgHeight /= buildingsPlaced;
 
-        fitness = (buildingFitness + defenceFitness) / 2;
+        float heightFitness = avgHeight / Terrain.activeTerrain.terrainData.size.y;
+
+        fitness = (buildingFitness + defenceFitness + heightFitness) / 3;
 
     }
 

@@ -5,7 +5,7 @@ public class Test : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        CastleGenerator cg = new CastleGenerator(new Vector2(200, 200), new Vector2(0, 0), 50);
+        CastleGenerator cg = new CastleGenerator(new Vector2(200, 200), 50);
         StartCoroutine(cg.runEvolution());
 	}
 	

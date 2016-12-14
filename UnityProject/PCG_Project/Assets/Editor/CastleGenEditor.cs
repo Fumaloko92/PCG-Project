@@ -81,7 +81,7 @@ public class CastleGenEditor : EditorWindow {
             //mousePosition = sceneView.camera.ray.ScreenToWorldPoint(mousePosition);
             //mousePosition.y = -mousePosition.y;
 
-            CastleGenerator cg = new CastleGenerator(castleDimension, castlePosition, buildingCount);
+            CastleGenerator cg = new CastleGenerator(castleDimension, buildingCount);
 
             cg.runEvolution();
             //cg.generateCastle(castleDimension, castlePosition, minNodeSize, maxNodeSize, constructProbability, buildingCount);
