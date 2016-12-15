@@ -6,7 +6,7 @@ using System.IO;
 public class CastleGenerator
 {
 
-    public const float GENERATIONS = 10;
+    public const float GENERATIONS = 1000;
     public const float POPULATION_SIZE = 200;
 
     public const float MUTATE_PROBABILITY = 0.2F;
