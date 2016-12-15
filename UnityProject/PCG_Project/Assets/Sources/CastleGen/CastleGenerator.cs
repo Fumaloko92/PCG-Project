@@ -6,7 +6,7 @@ using System.IO;
 public class CastleGenerator
 {
 
-    public const float GENERATIONS = 1000;
+    public const float GENERATIONS = 10;
     public const float POPULATION_SIZE = 200;
 
     public const float MUTATE_PROBABILITY = 0.2F;
@@ -69,7 +69,7 @@ public class CastleGenerator
             population.Sort();
             Debug.Log("Gen#" + curGeneration + " Best: " + bestFitness + " | Worst: " + worstFitness + " | AVG: " + avgFitness + " | best output: " + population[0].output() + " F:" + population[0].fitness);
             // /Debug
-            generations.Add(population);
+            generations.Add(new List<Castle>(population));
             produceNextGeneration();
             curGeneration++;
 
@@ -83,7 +83,7 @@ public class CastleGenerator
         //generate on map the best castle
         population.Sort();
         Debug.Log("Best Fitness: " + population[0].fitness + " output: " + population[0].output());
-        generations.Add(population);
+        generations.Add(new List<Castle>(population));
         Serialize();
         Terrain terrain = Terrain.activeTerrain;
 
