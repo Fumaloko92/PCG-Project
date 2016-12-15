@@ -8,10 +8,7 @@ using TerrainCreation;
 [RequireComponent(typeof(Terrain))]
 public class Fractals : MonoBehaviour
 {
-    public float seed;
-    public float variation;
-    public float roughness;
-    
+    public float seed = 0f; public float variation = 0.1f; public float roughness = 1.7f;
 
     public int terraforming_size = 513;
     public float terraforming_variation = 0.0002f;
