@@ -556,7 +556,8 @@ public class Castle : System.IComparable<Castle> {
         int subtraction = (buildingsPlaced > gen.DesiredBuildingCount ? buildingsPlaced-gen.DesiredBuildingCount : 0);
         buildingsPlaced = buildingsPlaced - subtraction;
 
-        float buildingFitness = ((float)buildingsPlaced / (float)gen.DesiredBuildingCount);
+        float buildingFitness = 0;
+        buildingFitness = ((float)buildingsPlaced / (float)gen.DesiredBuildingCount);
 
         List<float> wallLengths = new List<float>();
         List<Vector3> excludedTowers = new List<Vector3>();
@@ -582,7 +583,8 @@ public class Castle : System.IComparable<Castle> {
         }
         avgWallLength/=wallLengths.Count;
 
-        float defenceFitness = 1-(avgWallLength / 100);
+        float defenceFitness = 0;
+        defenceFitness = 1-(avgWallLength / 100);
 
         float avgHeight = 0;
         foreach(Node node in nodes)
@@ -595,7 +597,8 @@ public class Castle : System.IComparable<Castle> {
         }
         avgHeight /= buildingsPlaced;
 
-        float heightFitness = avgHeight / Terrain.activeTerrain.terrainData.size.y;
+        float heightFitness = 0;
+        heightFitness = avgHeight / Terrain.activeTerrain.terrainData.size.y;
 
         fitness = (buildingFitness + defenceFitness + heightFitness) / 3;
 

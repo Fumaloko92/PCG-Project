@@ -4,10 +4,10 @@ using System.Collections.Generic;
 
 public class CastleGenerator {
 
-    public const float GENERATIONS = 200;
-    public const float POPULATION_SIZE = 100;
+    public const float GENERATIONS = 300;
+    public const float POPULATION_SIZE = 150;
 
-    public const float MUTATE_PROBABILITY = 0.3F;
+    public const float MUTATE_PROBABILITY = 0.2F;
 
     List<Castle> population;
 
@@ -136,13 +136,13 @@ public class CastleGenerator {
             }
         }
         allowedToReproduce.Sort();
-        Debug.Log("Orginal: " + population.Count + " reproduce: " + allowedToReproduce.Count+ " Org Best:"+population[0].fitness+" re best"+allowedToReproduce[0].fitness);
+        //Debug.Log("Orginal: " + population.Count + " reproduce: " + allowedToReproduce.Count+ " Org Best:"+population[0].fitness+" re best"+allowedToReproduce[0].fitness);
 
         List<Castle> nextGeneration = new List<Castle>();
 
         nextGeneration.AddRange(allowedToReproduce);
 
-        Debug.Log("nextGen Count: " + nextGeneration.Count);
+        //Debug.Log("nextGen Count: " + nextGeneration.Count);
 
         int index = 0;
 
@@ -163,7 +163,7 @@ public class CastleGenerator {
             }
         }
 
-        Debug.Log("nextGen after Count: " + nextGeneration.Count);
+        //Debug.Log("nextGen after Count: " + nextGeneration.Count);
 
         population.Clear();
         population = nextGeneration;
